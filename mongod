@@ -1,0 +1,103 @@
+const getProductQrCodesBasedOnOrder = async (req, res) => {
+  // const returnMessage = getMsgFormat();
+//   let logger = getLogger("package/package_details");
+
+//   try {
+//     const Order = await req.db.model("Order");
+//     const foundProducts = await Order.aggregate([
+//       { $match: { _id: mongoose.Types.ObjectId(req.params.orderId) } },
+//       { $unwind: "$productIds" },
+//       {
+//         $lookup: {
+//           from: "products",
+//           let: { productId: "$productIds" },
+//           pipeline: [
+//             { $match: { $expr: { $eq: ["$productId", "$$productId"] } } },
+//             {
+//               $lookup: {
+//                 from: "qrcodes",
+//                 let: { qrId: { $toObjectId: "$qrCodeId" } },
+//                 pipeline: [{ $match: { $expr: { $eq: ["$_id", "$$qrId"] } } }],
+//                 as: "qrcodesa",
+//               },
+//             },
+//             { $unwind: "$qrcodesa" },
+//           ],
+//           as: "productsList",
+//         },
+//       },
+//       { $unwind: "$productsList" },
+//       {
+//         $group: {
+//           _id: "$_id",
+//           productObjects: { $push: "$productsList" },
+//         },
+//       },
+//     ]);
+
+//     returnMessage.isError = false;
+
+//     if (isEmpty(foundProducts)) {
+//       returnMessage.message = "No Records found";
+//     } else {
+//       returnMessage.message = "Records found";
+//       returnMessage.data = foundProducts;
+//     }
+
+//     return res.json(returnMessage);
+//   } catch (error) {
+//     logger.error(
+//       "Error occured while trying to fetch Product based on orderId Details. Error:",
+//       error
+//     );
+
+//     return res.status(400).json(returnMessage);
+//   }
+// };
+
+const orderId = req.params.orderId;
+  const returnMessage = getMsgFormat();
+  let logger = getLogger("order/getProductQrCodesBasedOnOrder");
+
+  if (isEmpty(orderId)) {
+    returnMessage.mesage =
+      "Error to get orderId detail! orderId is not available";
+    return res.status(400).json(returnMessage);
+  }
+
+  const mangoQuery = {
+    "selector": {
+     
+        
+        "$and": [
+          {"orderId":{ "$eq": orderId}  },  
+          { "productId":  { "$exists": true } },
+          
+        ]
+      
+   
+    },
+  };
+  couchExternal.mango(dbName, mangoQuery).then(({ data }) => {
+    if (!isEmpty(data.docs)) {
+      var output = []
+      for (let i = 0; i < data.docs.length; i++) {
+        output.push(data.docs[i]);
+      }
+      returnMessage.isError = false;
+      returnMessage.message = "Records found";
+      returnMessage.data = output;
+    } else {
+      returnMessage.isError = false;
+      returnMessage.message = " No Records found";
+    }
+    return res.status(200).json(returnMessage);
+
+  }, err => {
+    logger.error(error);
+    returnMessage.message = `Error occured while trying to fetch Product based on orderId Details. Error:`
+    return res.status(400).json(returnMessage);
+
+  });
+  
+};
